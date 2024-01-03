@@ -68,7 +68,7 @@ pub fn BufferedStreamSourceReader(comptime BufferSize: usize) type {
                             self.resetBufferedReader();
                         }
                     } else if (amt < 0) {
-                        const absolute_amt = @abs(amt);
+                        const absolute_amt = std.math.absCast(amt);
                         if (absolute_amt <= self.buffered_reader.start) {
                             self.buffered_reader.start -%= absolute_amt;
                         } else {
@@ -180,7 +180,7 @@ pub fn BufferedStreamSourceWriter(comptime BufferSize: usize) type {
                 },
                 .file => {
                     if (amt < 0) {
-                        const abs_amt = @abs(amt);
+                        const abs_amt = std.math.absCast(amt);
                         if (abs_amt <= self.buffered_writer.end) {
                             self.buffered_writer.end -= abs_amt;
                         } else {

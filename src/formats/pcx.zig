@@ -415,7 +415,7 @@ pub const PCX = struct {
     pub fn read(self: *PCX, allocator: Allocator, stream: *Image.Stream) ImageReadError!color.PixelStorage {
         var buffered_stream = buffered_stream_source.bufferedStreamSourceReader(stream);
         const reader = buffered_stream.reader();
-        self.header = try utils.readStruct(reader, PCXHeader, .little);
+        self.header = try utils.readStruct(reader, PCXHeader, .Little);
 
         if (self.header.id != 0x0A) {
             return ImageReadError.InvalidData;
@@ -565,7 +565,7 @@ pub const PCX = struct {
 
         const writer = buffered_stream.writer();
 
-        try utils.writeStruct(writer, self.header, .little);
+        try utils.writeStruct(writer, self.header, .Little);
 
         const actual_width = self.width();
         const is_even = ((actual_width & 0x1) == 0);
@@ -588,7 +588,7 @@ pub const PCX = struct {
                 try writer.writeByte(VGAPaletteIdentifier);
                 for (pixels.indexed8.palette) |current_entry| {
                     const rgb24_color = color.Rgb24.fromU32Rgba(current_entry.toU32Rgba());
-                    try utils.writeStruct(writer, rgb24_color, .little);
+                    try utils.writeStruct(writer, rgb24_color, .Little);
                 }
             },
             .rgb24 => |data| {

@@ -186,7 +186,7 @@ const TargaRLEDecoder = struct {
         var read_count: usize = 0;
 
         if (self.state == .read_header) {
-            const packet_header = try utils.readStruct(self.source_reader, RLEPacketHeader, .little);
+            const packet_header = try utils.readStruct(self.source_reader, RLEPacketHeader, .Little);
 
             if (packet_header.packet_type == .repeated) {
                 self.state = .repeated;
@@ -284,7 +284,7 @@ const RunLengthEncoderCommon = struct {
             .packet_type = .repeated,
         };
         try writer.writeByte(@bitCast(rle_packet_header));
-        try writer.writeInt(IntType, value, .little);
+        try writer.writeInt(IntType, value, .Little);
     }
 
     pub inline fn flushRaw(comptime IntType: type, writer: anytype, value: IntType, count: usize) !void {
@@ -295,7 +295,7 @@ const RunLengthEncoderCommon = struct {
         try writer.writeByte(@bitCast(rle_packet_header));
 
         for (0..count) |_| {
-            try writer.writeInt(IntType, value, .little);
+            try writer.writeInt(IntType, value, .Little);
         }
     }
 };
@@ -311,11 +311,11 @@ fn RunLengthSimpleEncoder(comptime IntType: type) type {
             const reader = fixed_stream.reader();
 
             var total_similar_count: usize = 0;
-            var compared_value = try reader.readInt(IntType, .little);
+            var compared_value = try reader.readInt(IntType, .Little);
             total_similar_count = 1;
 
             while ((try fixed_stream.getPos()) < (try fixed_stream.getEndPos())) {
-                const read_value = try reader.readInt(IntType, .little);
+                const read_value = try reader.readInt(IntType, .Little);
                 if (read_value == compared_value) {
                     total_similar_count += 1;
                 } else {
@@ -357,11 +357,11 @@ fn RunLengthSIMDEncoder(comptime IntType: type) type {
             var fixed_stream = std.io.fixedBufferStream(source_data);
             const reader = fixed_stream.reader();
 
-            var compared_value = try reader.readInt(IntType, .little);
+            var compared_value = try reader.readInt(IntType, .Little);
             try fixed_stream.seekTo(0);
 
             while (index < source_data.len and ((index + IndexStep) <= source_data.len)) {
-                const read_value = try reader.readInt(IntType, .little);
+                const read_value = try reader.readInt(IntType, .Little);
 
                 const current_byte_splatted: VectorType = @splat(read_value);
                 const compare_chunk = simd.load(source_data[index..], VectorType, 0);
@@ -587,7 +587,7 @@ pub const TGA = struct {
                 const footer_position = end_pos - @sizeOf(TGAFooter);
 
                 try buffered_stream.seekTo(footer_position);
-                const footer = try utils.readStruct(buffered_stream.reader(), TGAFooter, .little);
+                const footer = try utils.readStruct(buffered_stream.reader(), TGAFooter, .Little);
 
                 if (footer.dot != '.') {
                     break :blk false;
@@ -610,7 +610,7 @@ pub const TGA = struct {
             if (!is_valid_tga_v2 and @sizeOf(TGAHeader) < end_pos) {
                 try buffered_stream.seekTo(0);
 
-                const header = try utils.readStruct(buffered_stream.reader(), TGAHeader, .little);
+                const header = try utils.readStruct(buffered_stream.reader(), TGAHeader, .Little);
                 break :blk header.isValid();
             }
 
@@ -786,7 +786,7 @@ pub const TGA = struct {
 
         const reader = buffered_stream.reader();
         try buffered_stream.seekTo(end_pos - @sizeOf(TGAFooter));
-        const footer = try utils.readStruct(reader, TGAFooter, .little);
+        const footer = try utils.readStruct(reader, TGAFooter, .Little);
 
         var is_tga_version2 = true;
 
@@ -798,12 +798,12 @@ pub const TGA = struct {
         if (is_tga_version2 and footer.extension_offset > 0) {
             const extension_pos: u64 = @intCast(footer.extension_offset);
             try buffered_stream.seekTo(extension_pos);
-            self.extension = try utils.readStruct(reader, TGAExtension, .little);
+            self.extension = try utils.readStruct(reader, TGAExtension, .Little);
         }
 
         // Read header
         try buffered_stream.seekTo(0);
-        self.header = try utils.readStruct(reader, TGAHeader, .little);
+        self.header = try utils.readStruct(reader, TGAHeader, .Little);
 
         if (!self.header.isValid()) {
             return Image.ReadError.InvalidData;
@@ -954,7 +954,7 @@ pub const TGA = struct {
         const data_end: usize = self.header.color_map_spec.first_entry_index + self.header.color_map_spec.length;
 
         while (data_index < data_end) : (data_index += 1) {
-            const read_color = try utils.readStruct(reader, color.Rgb555, .little);
+            const read_color = try utils.readStruct(reader, color.Rgb555, .Little);
 
             data.palette[data_index].r = color.scaleToIntColor(u8, read_color.r);
             data.palette[data_index].g = color.scaleToIntColor(u8, read_color.g);
@@ -980,7 +980,7 @@ pub const TGA = struct {
         const data_end: usize = self.width() * self.height();
 
         while (data_index < data_end) : (data_index += 1) {
-            const raw_color = try stream.readInt(u16, .little);
+            const raw_color = try stream.readInt(u16, .Little);
 
             data[data_index].r = @truncate(raw_color >> 10);
             data[data_index].g = @truncate(raw_color >> 5);
@@ -997,7 +997,7 @@ pub const TGA = struct {
             for (0..self.width()) |x| {
                 const data_index = stride + x;
 
-                const raw_color = try stream.readInt(u16, .little);
+                const raw_color = try stream.readInt(u16, .Little);
 
                 data[data_index].r = @truncate(raw_color >> (5 * 2));
                 data[data_index].g = @truncate(raw_color >> 5);
@@ -1077,7 +1077,7 @@ pub const TGA = struct {
         var buffered_stream = buffered_stream_source.bufferedStreamSourceWriter(stream);
         const writer = buffered_stream.writer();
 
-        try utils.writeStruct(writer, self.header, .little);
+        try utils.writeStruct(writer, self.header, .Little);
 
         if (self.header.id_length > 0) {
             if (self.id.data.len != self.header.id_length) {
@@ -1113,13 +1113,13 @@ pub const TGA = struct {
         if (self.extension) |extension| {
             extension_offset = @truncate(try buffered_stream.getPos());
 
-            try utils.writeStruct(writer, extension, .little);
+            try utils.writeStruct(writer, extension, .Little);
         }
 
         var footer = TGAFooter{};
         footer.extension_offset = extension_offset;
         std.mem.copyForwards(u8, footer.signature[0..], TGASignature[0..]);
-        try utils.writeStruct(writer, footer, .little);
+        try utils.writeStruct(writer, footer, .Little);
 
         try buffered_stream.flush();
     }
@@ -1342,7 +1342,7 @@ pub const TGA = struct {
                 .b = color.scaleToIntColor(u5, indexed.palette[data_index].b),
             };
 
-            try writer.writeInt(u16, @as(u15, @bitCast(converted_color)), .little);
+            try writer.writeInt(u16, @as(u15, @bitCast(converted_color)), .Little);
         }
     }
 
@@ -1357,7 +1357,7 @@ pub const TGA = struct {
                 .b = indexed.palette[data_index].b,
             };
 
-            try utils.writeStruct(writer, converted_color, .little);
+            try utils.writeStruct(writer, converted_color, .Little);
         }
     }
 };

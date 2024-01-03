@@ -92,8 +92,8 @@ pub const Header = extern struct {
     fn encode(header: Header) [size]u8 {
         var result: [size]u8 = undefined;
         @memcpy(result[0..4], &correct_magic);
-        std.mem.writeInt(u32, result[4..8], header.width, .big);
-        std.mem.writeInt(u32, result[8..12], header.height, .big);
+        std.mem.writeInt(u32, result[4..8], header.width, .Big);
+        std.mem.writeInt(u32, result[8..12], header.height, .Big);
         result[12] = @intFromEnum(header.format);
         result[13] = @intFromEnum(header.colorspace);
         return result;
@@ -199,7 +199,7 @@ pub const QOI = struct {
             return ImageReadError.InvalidData;
         }
 
-        self.header = utils.readStruct(reader, Header, .big) catch return ImageReadError.InvalidData;
+        self.header = utils.readStruct(reader, Header, .Big) catch return ImageReadError.InvalidData;
 
         const pixel_format = try self.pixelFormat();
 

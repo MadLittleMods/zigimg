@@ -37,16 +37,16 @@ pub fn toMagicNumberForeign(magic: []const u8) u32 {
 
 pub inline fn toMagicNumber(magic: []const u8, comptime wanted_endian: std.builtin.Endian) u32 {
     return switch (native_endian) {
-        .little => {
+        .Little => {
             return switch (wanted_endian) {
-                .little => toMagicNumberNative(magic),
-                .big => toMagicNumberForeign(magic),
+                .Little => toMagicNumberNative(magic),
+                .Big => toMagicNumberForeign(magic),
             };
         },
-        .big => {
+        .Big => {
             return switch (wanted_endian) {
-                .little => toMagicNumberForeign(magic),
-                .big => toMagicNumberNative(magic),
+                .Little => toMagicNumberForeign(magic),
+                .Big => toMagicNumberNative(magic),
             };
         },
     };
@@ -144,16 +144,16 @@ pub fn readStructForeign(reader: anytype, comptime T: type) StructReadError!T {
 
 pub inline fn readStruct(reader: anytype, comptime T: type, comptime wanted_endian: std.builtin.Endian) StructReadError!T {
     return switch (native_endian) {
-        .little => {
+        .Little => {
             return switch (wanted_endian) {
-                .little => readStructNative(reader, T),
-                .big => readStructForeign(reader, T),
+                .Little => readStructNative(reader, T),
+                .Big => readStructForeign(reader, T),
             };
         },
-        .big => {
+        .Big => {
             return switch (wanted_endian) {
-                .little => readStructForeign(reader, T),
-                .big => readStructNative(reader, T),
+                .Little => readStructForeign(reader, T),
+                .Big => readStructNative(reader, T),
             };
         },
     };
@@ -161,16 +161,16 @@ pub inline fn readStruct(reader: anytype, comptime T: type, comptime wanted_endi
 
 pub inline fn writeStruct(writer: anytype, value: anytype, comptime wanted_endian: std.builtin.Endian) StructWriteError!void {
     return switch (native_endian) {
-        .little => {
+        .Little => {
             return switch (wanted_endian) {
-                .little => writeStructNative(writer, value),
-                .big => writeStructForeign(writer, value),
+                .Little => writeStructNative(writer, value),
+                .Big => writeStructForeign(writer, value),
             };
         },
-        .big => {
+        .Big => {
             return switch (wanted_endian) {
-                .little => writeStructForeign(writer, value),
-                .big => writeStructNative(writer, value),
+                .Little => writeStructForeign(writer, value),
+                .Big => writeStructNative(writer, value),
             };
         },
     };

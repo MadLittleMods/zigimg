@@ -250,7 +250,7 @@ pub const GIF = struct {
         for (self.application_infos.items) |application_info| {
             for (AnimationApplicationExtensions) |anim_extension| {
                 if (std.mem.eql(u8, application_info.application_identifier[0..], anim_extension.identifier) and std.mem.eql(u8, application_info.authentification_code[0..], anim_extension.code)) {
-                    const loop_count = std.mem.readPackedInt(u16, application_info.data[1..], 0, .little);
+                    const loop_count = std.mem.readPackedInt(u16, application_info.data[1..], 0, .Little);
                     if (loop_count == 0) {
                         return Image.AnimationLoopInfinite;
                     }
@@ -268,7 +268,7 @@ pub const GIF = struct {
             .reader = buffered_stream.reader(),
         };
 
-        self.header = try utils.readStruct(context.reader, Header, .little);
+        self.header = try utils.readStruct(context.reader, Header, .Little);
 
         if (!std.mem.eql(u8, self.header.magic[0..], Magic)) {
             return Image.ReadError.InvalidData;
@@ -295,7 +295,7 @@ pub const GIF = struct {
             var index: usize = 0;
 
             while (index < global_color_table_size) : (index += 1) {
-                self.global_color_table.data[index] = try utils.readStruct(context.reader, color.Rgb24, .little);
+                self.global_color_table.data[index] = try utils.readStruct(context.reader, color.Rgb24, .Little);
             }
         }
 
@@ -306,7 +306,7 @@ pub const GIF = struct {
 
     // <Data> ::= <Graphic Block> | <Special-Purpose Block>
     fn readData(self: *GIF, context: *ReaderContext) Image.ReadError!void {
-        var current_block = context.reader.readEnum(DataBlockKind, .little) catch {
+        var current_block = context.reader.readEnum(DataBlockKind, .Little) catch {
             return Image.ReadError.InvalidData;
         };
 
@@ -319,7 +319,7 @@ pub const GIF = struct {
                     is_graphic_block = true;
                 },
                 .extension => {
-                    extension_kind_opt = context.reader.readEnum(ExtensionKind, .little) catch blk: {
+                    extension_kind_opt = context.reader.readEnum(ExtensionKind, .Little) catch blk: {
                         var dummy_byte = try context.reader.readByte();
                         while (dummy_byte != ExtensionBlockTerminator) {
                             dummy_byte = try context.reader.readByte();
@@ -338,7 +338,7 @@ pub const GIF = struct {
                             else => {},
                         }
                     } else {
-                        current_block = context.reader.readEnum(DataBlockKind, .little) catch {
+                        current_block = context.reader.readEnum(DataBlockKind, .Little) catch {
                             return Image.ReadError.InvalidData;
                         };
                         continue;
@@ -355,7 +355,7 @@ pub const GIF = struct {
                 try self.readSpecialPurposeBlock(context, extension_kind_opt.?);
             }
 
-            current_block = context.reader.readEnum(DataBlockKind, .little) catch {
+            current_block = context.reader.readEnum(DataBlockKind, .Little) catch {
                 return Image.ReadError.InvalidData;
             };
         }
@@ -374,8 +374,8 @@ pub const GIF = struct {
                     // Eat block size
                     _ = try context.reader.readByte();
 
-                    graphics_control.flags = try utils.readStruct(context.reader, GraphicControlExtensionFlags, .little);
-                    graphics_control.delay_time = try context.reader.readInt(u16, .little);
+                    graphics_control.flags = try utils.readStruct(context.reader, GraphicControlExtensionFlags, .Little);
+                    graphics_control.delay_time = try context.reader.readInt(u16, .Little);
 
                     if (graphics_control.flags.has_transparent_color) {
                         graphics_control.transparent_color_index = try context.reader.readByte();
@@ -392,7 +392,7 @@ pub const GIF = struct {
                     break :blk graphics_control;
                 };
 
-                const new_block_kind = context.reader.readEnum(DataBlockKind, .little) catch {
+                const new_block_kind = context.reader.readEnum(DataBlockKind, .Little) catch {
                     return Image.ReadError.InvalidData;
                 };
 
@@ -423,7 +423,7 @@ pub const GIF = struct {
                 if (extension_kind_opt) |value| {
                     extension_kind = value;
                 } else {
-                    extension_kind = context.reader.readEnum(ExtensionKind, .little) catch {
+                    extension_kind = context.reader.readEnum(ExtensionKind, .Little) catch {
                         return Image.ReadError.InvalidData;
                     };
                 }
@@ -522,7 +522,7 @@ pub const GIF = struct {
     fn readImageDescriptorAndData(self: *GIF, context: *ReaderContext) Image.ReadError!void {
         if (context.current_frame_data) |current_frame_data| {
             var sub_image = try current_frame_data.allocNewSubImage(self.allocator);
-            sub_image.image_descriptor = try utils.readStruct(context.reader, ImageDescriptor, .little);
+            sub_image.image_descriptor = try utils.readStruct(context.reader, ImageDescriptor, .Little);
 
             // Don't read any futher if the local width or height is zero
             if (sub_image.image_descriptor.width == 0 or sub_image.image_descriptor.height == 0) {
@@ -537,7 +537,7 @@ pub const GIF = struct {
                 var index: usize = 0;
 
                 while (index < local_color_table_size) : (index += 1) {
-                    sub_image.local_color_table.data[index] = try utils.readStruct(context.reader, color.Rgb24, .little);
+                    sub_image.local_color_table.data[index] = try utils.readStruct(context.reader, color.Rgb24, .Little);
                 }
             }
 
@@ -550,7 +550,7 @@ pub const GIF = struct {
                 return Image.ReadError.InvalidData;
             }
 
-            var lzw_decoder = try lzw.Decoder(.little).init(self.allocator, lzw_minimum_code_size);
+            var lzw_decoder = try lzw.Decoder(.Little).init(self.allocator, lzw_minimum_code_size);
             defer lzw_decoder.deinit();
 
             var data_block_size = try context.reader.readByte();
@@ -705,9 +705,9 @@ pub const GIF = struct {
         }
 
         switch (current_frame.pixels) {
-            .indexed1 => |pixels| @memset(pixels.indices, @intCast(background_color_index)),
-            .indexed2 => |pixels| @memset(pixels.indices, @intCast(background_color_index)),
-            .indexed4 => |pixels| @memset(pixels.indices, @intCast(background_color_index)),
+            .indexed1 => |pixels| @memset(pixels.indices, @as(u1, @intCast(background_color_index))),
+            .indexed2 => |pixels| @memset(pixels.indices, @as(u2, @intCast(background_color_index))),
+            .indexed4 => |pixels| @memset(pixels.indices, @as(u4, @intCast(background_color_index))),
             .indexed8 => |pixels| @memset(pixels.indices, background_color_index),
             .rgb24 => |pixels| @memset(pixels, effective_color_table[background_color_index]),
             .rgba32 => |pixels| @memset(pixels, color.Rgba32.fromU32Rgba(effective_color_table[background_color_index].toU32Rgb())),

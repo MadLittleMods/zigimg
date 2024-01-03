@@ -49,7 +49,7 @@ pub fn filter(writer: anytype, pixels: color.PixelStorage, filter_choice: Filter
         try writer.writeByte(@intFromEnum(filter_type));
 
         for (0..scanline.asBytes().len) |byte_index| {
-            const i = if (builtin.target.cpu.arch.endian() == .little) pixelByteSwappedIndex(scanline, byte_index) else byte_index;
+            const i = if (builtin.target.cpu.arch.endian() == .Little) pixelByteSwappedIndex(scanline, byte_index) else byte_index;
 
             const sample = scanline.asBytes()[i];
             const previous: u8 = if (byte_index >= pixel_len) scanline.asBytes()[i - pixel_len] else 0;
@@ -151,9 +151,9 @@ fn average(a: u9, b: u9) u8 {
 
 fn paeth(b4: u8, up: u8, b4_up: u8) u8 {
     const p: i16 = @as(i16, @intCast(b4)) + up - b4_up;
-    const pa = @abs(p - b4);
-    const pb = @abs(p - up);
-    const pc = @abs(p - b4_up);
+    const pa = std.math.absInt(p - b4) catch unreachable;
+    const pb = std.math.absInt(p - up) catch unreachable;
+    const pc = std.math.absInt(p - b4_up) catch unreachable;
 
     if (pa <= pb and pa <= pc) {
         return b4;
